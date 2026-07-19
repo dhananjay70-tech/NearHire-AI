@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # NearHire.AI
 
 An AI-powered hyperlocal job discovery platform — connecting job seekers with opportunities near them.
@@ -343,3 +344,7 @@ taskkill /PID <PID> /F
 3. **DB Init**: Run `cd node-backend && npm run db:init` before starting the server for the first time.
 4. **Python venv**: The virtual environment must be activated manually before running `npm run dev:python` from the root.
 5. **Environment files**: All `.env.example` files must be copied to `.env` and filled in before starting any service.
+=======
+# NearHire-AI
+NearHire AI is an AI-powered hyperlocal job platform that helps users discover nearby job opportunities based on their location, skills, and preferences. It delivers personalized job recommendations with smart matching to make job searching faster and more efficient.
+>>>>>>> a1f68ab0acec90dcb60c0860658084d41d843945
