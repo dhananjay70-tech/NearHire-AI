@@ -9,7 +9,9 @@ from app.api.recommendations import router as recommendations_router
 from app.api.agent import router as agent_router
 
 
-# ─── App Initialization ───────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────
+# FastAPI App
+# ────────────────────────────────────────────────────────────────
 app = FastAPI(
     title="NearHire.AI — Python Backend",
     description="AI-powered backend for hyperlocal job discovery",
@@ -18,38 +20,45 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# ─── CORS ─────────────────────────────────────────────────────────────────────
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=[settings.CORS_ORIGIN],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+# ────────────────────────────────────────────────────────────────
+# CORS Configuration
+# ────────────────────────────────────────────────────────────────
+
+origins = [
+    # Local Development
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+
+    # Production Frontend
+    "https://near-hire-ai.vercel.app",
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174",
-    ],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# ─── Root Health Check ────────────────────────────────────────────────────────
+
+# ────────────────────────────────────────────────────────────────
+# Health Check
+# ────────────────────────────────────────────────────────────────
+
 @app.get("/health", tags=["Health"], summary="Root Health Check")
 async def root_health():
-    """Returns the health status of the Python backend."""
     return {
         "status": "ok",
         "service": "nearhire-python-backend",
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
-# ─── API Routers ──────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────
+# API Routes
+# ────────────────────────────────────────────────────────────────
+
 app.include_router(health_router, prefix="/api")
 app.include_router(resume_router, prefix="/api")
 app.include_router(recommendations_router, prefix="/api")
