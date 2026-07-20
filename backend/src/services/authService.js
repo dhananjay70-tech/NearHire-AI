@@ -22,16 +22,14 @@ const SALT_ROUNDS = 12;
  * @param {string} token
  */
 export function setAuthCookie(res, token) {
-  const isProduction = process.env.NODE_ENV === 'production';
-  res.cookie('nearhire_token', token, {
+  res.cookie("nearhire_token", token, {
     httpOnly: true,
-    sameSite: 'lax',
-    secure: isProduction,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
-    path: '/',
+    secure: true,
+    sameSite: "none",
+    path: "/",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 }
-
 /**
  * Clear the nearhire_token cookie.
  * @param {import('express').Response} res
