@@ -35,9 +35,13 @@ export function setAuthCookie(res, token) {
  * @param {import('express').Response} res
  */
 export function clearAuthCookie(res) {
-  res.clearCookie('nearhire_token', { path: '/' });
+  res.clearCookie("nearhire_token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    path: "/",
+  });
 }
-
 // ─── Register ────────────────────────────────────────────────────────────────
 
 /**
