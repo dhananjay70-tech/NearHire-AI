@@ -71,11 +71,20 @@ export async function forgotPassword(email) {
  * @param {{ email: string, otp: string }} data
  * @returns {Promise<object>}
  */
-export async function verifyResetOtp({ email, otp }) {
-  const response = await coreApi.post('/auth/verify-reset-otp', { email, otp });
-  return response.data.data;
-}
+export async function verifyOtp(data) {
+    const response = await coreApi.post("/auth/verify-otp", data);
 
+    console.log("VERIFY OTP RESPONSE:", response.data);
+
+    if (response.data?.data?.token) {
+        console.log("TOKEN FOUND:", response.data.data.token);
+        localStorage.setItem("token", response.data.data.token);
+    } else {
+        console.log("TOKEN NOT FOUND");
+    }
+
+    return response.data.data;
+}
 /**
  * Reset password to new value (Step 3).
  * @param {{ email: string, otp: string, password: string }} data
