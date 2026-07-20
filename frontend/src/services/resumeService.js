@@ -45,21 +45,12 @@ export async function analyzeResume(
     formData.append("radiusKm", String(radiusKm));
   }
 
-  // Read JWT from localStorage
-  const token =
-    localStorage.getItem("token") ||
-    localStorage.getItem("accessToken") ||
-    "";
-
   const response = await aiApi.post(
     "/resume/analyze",
     formData,
     {
       headers: {
         "Content-Type": "multipart/form-data",
-        ...(token && {
-          Authorization: `Bearer ${token}`,
-        }),
       },
 
       onUploadProgress: onProgress

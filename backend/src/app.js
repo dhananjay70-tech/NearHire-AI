@@ -36,23 +36,32 @@ app.use(limiter);
 
 app.use(cors({
   origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+
     const allowedOrigins = [
       "http://localhost:5173",
       "http://localhost:5174",
+      "http://localhost:3000",
+      "http://127.0.0.1:5173",
+      "http://127.0.0.1:5174",
       "https://near-hire-ai.vercel.app",
     ];
 
     if (
-      !origin ||
       allowedOrigins.includes(origin) ||
-      origin.endsWith(".vercel.app")
+      origin.endsWith(".vercel.app") ||
+      origin.startsWith("http://localhost:") ||
+      origin.startsWith("http://127.0.0.1:")
     ) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
+      return callback(null, true);
     }
+
+    return callback(null, false);
   },
   credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+  optionsSuccessStatus: 200,
 }));
 // ─── Body Parsers ─────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '10kb' }));

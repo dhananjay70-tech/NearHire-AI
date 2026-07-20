@@ -385,7 +385,8 @@ export async function getMe(userId) {
   }
 
   const preferences = await userRepo.getPreferences(userId);
-  return { user, preferences };
+  const token = signToken({ userId: user.id, email: user.email, role: user.role });
+  return { user, preferences, token };
 }
 
 // ─── Update profile ──────────────────────────────────────────────────────────

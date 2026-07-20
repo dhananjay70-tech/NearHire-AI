@@ -118,12 +118,12 @@ export async function resetPassword(req, res) {
 export async function getMe(req, res) {
   const { userId } = req.user;
 
-  const { user, preferences } = await authService.getMe(userId);
+  const { user, preferences, token } = await authService.getMe(userId);
 
   return sendSuccess(res, {
     statusCode: 200,
     message: 'User fetched successfully.',
-    data: { user, preferences },
+    data: { user, preferences, token },
   });
 }
 

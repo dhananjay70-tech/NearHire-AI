@@ -1,153 +1,148 @@
 /**
- * AuthContext.jsx — Global authentication state for the NearHire.AI frontend.
- *
- * On app startup, calls GET /auth/me to restore session from the httpOnly cookie.
- * Exposes user state and all auth actions to child components.
+ * authService.js — Frontend service functions for authentication API calls.
+ * All functions communicate with /api/auth/* on the Node backend.
  */
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import * as authService from '../services/authService.js';
-import { ROLES, normalizeRole } from '../utils/roles.js';
+import coreApi from './coreApi.js';
 
-// ─── Context ──────────────────────────────────────────────────────────────────
-const AuthContext = createContext(null);
+/**
+ * Register a new user account.
+ * @param {{ name: string, email: string, password: string, role?: string }} data
+ * @returns {Promise<{ user: object, token?: string }>}
+ */
+export async function register({ name, email, password, role }) {
+  const payload = { name, email, password };
+  if (role) payload.role = role;
 
-// ─── Provider ─────────────────────────────────────────────────────────────────
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [preferences, setPreferences] = useState(null);
-  const [loading, setLoading] = useState(true); // true while checking session on startup
-
-  // ── Restore session on mount ─────────────────────────────────────────────────
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await authService.getMe();
-        if (data) {
-          setUser(data.user);
-          setPreferences(data.preferences);
-        }
-      } catch {
-        // Unexpected error — treat as logged out
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  // ── Refresh user ──────────────────────────────────────────────────────────────
-  const refreshUser = useCallback(async () => {
-    const data = await authService.getMe();
-    if (data) {
-      setUser(data.user);
-      setPreferences(data.preferences);
-    } else {
-      setUser(null);
-      setPreferences(null);
-    }
-  }, []);
-
-  // ── Register ──────────────────────────────────────────────────────────────────
-  const register = useCallback(async (formData) => {
-    const data = await authService.register(formData);
-    setUser(data.user);
-    return data;
-  }, []);
-
-  // ── Login (Step 1) ────────────────────────────────────────────────────────────
-  const login = useCallback(async (credentials) => {
-    const data = await authService.login(credentials);
-    return data;
-  }, []);
-
-  // ── Verify OTP (Step 2) ────────────────────────────────────────────────────────
-  const verifyOtp = useCallback(async (payload) => {
-    const data = await authService.verifyOtp(payload);
-    setUser(data.user);
-    return data;
-  }, []);
-
-  // ── Resend OTP ────────────────────────────────────────────────────────────────
-  const resendOtp = useCallback(async (payload) => {
-    const data = await authService.resendOtp(payload);
-    return data;
-  }, []);
-
-  // ── Forgot Password ──────────────────────────────────────────────────────────
-  const forgotPassword = useCallback(async (email) => {
-    const data = await authService.forgotPassword(email);
-    return data;
-  }, []);
-
-  const verifyResetOtp = useCallback(async (payload) => {
-    const data = await authService.verifyResetOtp(payload);
-    return data;
-  }, []);
-
-  const resetPassword = useCallback(async (payload) => {
-    const data = await authService.resetPassword(payload);
-    return data;
-  }, []);
-
-  // ── Logout ────────────────────────────────────────────────────────────────────
-  const logout = useCallback(async () => {
-    await authService.logout();
-    setUser(null);
-    setPreferences(null);
-  }, []);
-
-  // ── Update profile ────────────────────────────────────────────────────────────
-  const updateProfile = useCallback(async (fields) => {
-    const data = await authService.updateProfile(fields);
-    setUser(data.user);
-    return data;
-  }, []);
-
-  // ── Update preferences ────────────────────────────────────────────────────────
-  const updatePreferences = useCallback(async (fields) => {
-    const data = await authService.updatePreferences(fields);
-    setPreferences(data.preferences);
-    return data;
-  }, []);
-
-  // Normalized role drives navigation/rendering only — the API re-checks it.
-  const role = user ? normalizeRole(user.role) : null;
-
-  const value = {
-    user,
-    preferences,
-    loading,
-    isAuthenticated: !!user,
-    role,
-    isSeeker: role === ROLES.SEEKER,
-    isRecruiter: role === ROLES.RECRUITER,
-    isAdmin: role === ROLES.ADMIN,
-    register,
-    login,
-    verifyOtp,
-    resendOtp,
-    forgotPassword,
-    verifyResetOtp,
-    resetPassword,
-    logout,
-    refreshUser,
-    updateProfile,
-    updatePreferences,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const response = await coreApi.post('/auth/register', payload);
+  const data = response.data.data;
+  if (data?.token) {
+    localStorage.setItem('token', data.token);
+  }
+  return data;
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
 /**
- * useAuth — Access authentication context from any component.
- * Must be used inside <AuthProvider>.
+ * Log in with email and password (Step 1).
+ * @param {{ email: string, password: string }} credentials
+ * @returns {Promise<{ otpRequired: boolean, email: string }>}
  */
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error('useAuth must be used inside <AuthProvider>');
+export async function login({ email, password }) {
+  const response = await coreApi.post('/auth/login', { email, password });
+  return response.data.data;
+}
+
+/**
+ * Verify OTP code to log in (Step 2).
+ * @param {{ email: string, otp: string }} data
+ * @returns {Promise<{ user: object, token?: string }>}
+ */
+export async function verifyOtp({ email, otp }) {
+  const response = await coreApi.post('/auth/verify-otp', { email, otp });
+  const data = response.data.data;
+  if (data?.token) {
+    localStorage.setItem('token', data.token);
   }
-  return ctx;
+  return data;
+}
+
+/**
+ * Resend OTP code.
+ * @param {{ email: string, type?: string }} data
+ * @returns {Promise<object>}
+ */
+export async function resendOtp({ email, type }) {
+  const response = await coreApi.post('/auth/resend-otp', { email, type });
+  return response.data.data;
+}
+
+/**
+ * Request password reset (Step 1).
+ * @param {string} email
+ * @returns {Promise<object>}
+ */
+export async function forgotPassword(email) {
+  const response = await coreApi.post('/auth/forgot-password', { email });
+  return response.data.data;
+}
+
+/**
+ * Verify reset OTP code (Step 2).
+ * @param {{ email: string, otp: string }} data
+ * @returns {Promise<object>}
+ */
+export async function verifyResetOtp({ email, otp }) {
+  const response = await coreApi.post('/auth/verify-reset-otp', { email, otp });
+  return response.data.data;
+}
+
+/**
+ * Reset password to new value (Step 3).
+ * @param {{ email: string, otp: string, password: string }} data
+ * @returns {Promise<object>}
+ */
+export async function resetPassword({ email, otp, password }) {
+  const response = await coreApi.post('/auth/reset-password', { email, otp, password });
+  return response.data.data;
+}
+
+/**
+ * Log out the current user.
+ */
+export async function logout() {
+  await coreApi.post('/auth/logout');
+  localStorage.removeItem('token');
+  localStorage.removeItem('accessToken');
+}
+
+/**
+ * Fetch the currently authenticated user and their preferences.
+ * Returns null if not authenticated (401) instead of throwing.
+ * @returns {Promise<{ user: object, preferences: object, token?: string } | null>}
+ */
+export async function getMe() {
+  try {
+    const response = await coreApi.get('/auth/me');
+    const data = response.data.data;
+    if (data?.token) {
+      localStorage.setItem('token', data.token);
+    }
+    return data;
+  } catch (err) {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('accessToken');
+      return null; // Not logged in — not an error
+    }
+    throw err;
+  }
+}
+
+/**
+ * Update the current user's profile fields.
+ * @param {object} fields
+ * @returns {Promise<{ user: object }>}
+ */
+export async function updateProfile(fields) {
+  const response = await coreApi.patch('/auth/profile', fields);
+  return response.data.data;
+}
+
+/**
+ * Get the current user's job preferences.
+ * @returns {Promise<{ preferences: object }>}
+ */
+export async function getPreferences() {
+  const response = await coreApi.get('/auth/preferences');
+  return response.data.data;
+}
+
+/**
+ * Update the current user's job preferences.
+ * @param {object} fields
+ * @returns {Promise<{ preferences: object }>}
+ */
+export async function updatePreferences(fields) {
+  const response = await coreApi.patch('/auth/preferences', fields);
+  return response.data.data;
 }
