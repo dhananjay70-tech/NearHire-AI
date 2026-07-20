@@ -35,9 +35,15 @@ export async function login({ email, password }) {
  * @param {{ email: string, otp: string }} data
  * @returns {Promise<{ user: object }>}
  */
-export async function verifyOtp({ email, otp }) {
-  const response = await coreApi.post('/auth/verify-otp', { email, otp });
-  return response.data.data;
+export async function verifyOtp(data) {
+    const response = await coreApi.post("/auth/verify-otp", data);
+
+    // Save JWT for Python backend
+    if (response.data?.data?.token) {
+        localStorage.setItem("token", response.data.data.token);
+    }
+
+    return response.data.data;
 }
 
 /**
