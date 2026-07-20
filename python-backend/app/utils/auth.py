@@ -60,8 +60,8 @@ def require_auth(request: Request) -> dict:
             detail="Authentication required. Please log in."
         )
     payload = verify_token(token)
-    user_id = payload.get("userId") or payload.get("sub")
+    user_id = payload.get("userId") or payload.get("sub") or payload.get("id")
     role = payload.get("role", "USER")
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token payload.")
-    return {"userId": user_id, "role": role}
+    return {"userId": user_id, "id": user_id, "role": role}
