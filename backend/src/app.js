@@ -26,14 +26,34 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
+// app.use(cors({
+//   origin: [
+//     "http://localhost:5173",
+//     "http://localhost:5174"
+//   ],
+//   credentials: true,
+// }));
+
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "http://localhost:5174"
-  ],
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "https://near-hire-ai.vercel.app",
+    ];
+
+    if (
+      !origin ||
+      allowedOrigins.includes(origin) ||
+      origin.endsWith(".vercel.app")
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
 }));
-
 // ─── Body Parsers ─────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
