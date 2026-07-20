@@ -2,14 +2,6 @@ import aiApi from "./aiApi.js";
 
 /**
  * POST /api/resume/analyze
- *
- * @param {File} file
- * @param {object} options
- * @param {string|null} options.jobId
- * @param {number|null} options.latitude
- * @param {number|null} options.longitude
- * @param {number|null} options.radiusKm
- * @param {function|null} options.onProgress
  */
 export async function analyzeResume(
   file,
@@ -53,26 +45,33 @@ export async function analyzeResume(
     formData.append("radiusKm", String(radiusKm));
   }
 
+  // Read JWT from localStorage
+  const token =
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken") ||
+    "";
+
   const response = await aiApi.post(
     "/resume/analyze",
     formData,
     {
       headers: {
         "Content-Type": "multipart/form-data",
+        ...(token && {
+          Authorization: `Bearer ${token}`,
+        }),
       },
 
       onUploadProgress: onProgress
         ? (event) => {
-          if (!event.total) {
-            return;
+            if (!event.total) return;
+
+            const percentage = Math.round(
+              (event.loaded / event.total) * 100
+            );
+
+            onProgress(percentage);
           }
-
-          const percentage = Math.round(
-            (event.loaded / event.total) * 100
-          );
-
-          onProgress(percentage);
-        }
         : undefined,
     }
   );
